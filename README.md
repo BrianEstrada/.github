@@ -30,7 +30,7 @@ skips (deps, chores).
 
 The release commit goes straight to main, so it needs a GitHub App with Contents: read and write,
 installed on the repo and allowed to bypass main's ruleset. Store its Client ID as the
-`RELEASE_APP_CLIENT_ID` variable and its private key as the `RELEASE_APP_PRIVATE_KEY` secret.
+`RELEASE_APP_CLIENT_ID` secret and its private key as the `RELEASE_APP_PRIVATE_KEY` secret.
 
 ```yaml
 # .github/workflows/release.yml (npm's trusted publisher matches this file name)
@@ -57,7 +57,7 @@ jobs:
     uses: BrianEstrada/.github/.github/workflows/bun-npm-release.yml@<sha> # main
     with:
       version: ${{ inputs.version }}
-      app-client-id: ${{ vars.RELEASE_APP_CLIENT_ID }}
     secrets:
+      app-client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
       app-private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
 ```
