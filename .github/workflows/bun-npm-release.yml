@@ -1,0 +1,102 @@
+# Cuts a release of a Bun-built npm package from main: bumps the version, updates CHANGELOG.md, commits
+# and tags it, publishes to npm and creates the GitHub Release.
+# The caller needs a `changelog` script, `bun run check`, git-cliff, and a GitHub App that can bypass
+# main's ruleset, since the release commit is pushed straight to main.
+# npm trusted publishing matches the calling workflow's file name, not this one's.
+name: Bun npm release
+
+on:
+  workflow_call:
+    inputs:
+      version:
+        description: Version to release, like 0.2.0. Leave empty to work it out from the commits.
+        required: false
+        type: string
+        default: ""
+      app-client-id:
+        description: Client ID of the GitHub App that pushes the release commit and tag.
+        required: true
+        type: string
+      bun-version:
+        required: false
+        type: string
+        default: 1.4.3
+    secrets:
+      app-private-key:
+        description: Private key of that GitHub App.
+        required: true
+
+jobs:
+  release:
+    if: github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      # OIDC token for npm trusted publishing and provenance.
+      id-token: write
+    steps:
+      # The App's token, not GITHUB_TOKEN: Actions can't bypass rulesets on a personal account's repos.
+      - id: app-token
+        uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
+        with:
+          client-id: ${{ inputs.app-client-id }}
+          private-key: ${{ secrets.app-private-key }}
+          permission-contents: write
+
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          token: ${{ steps.app-token.outputs.token }}
+          # git-cliff reads every commit and tag since the last release.
+          fetch-depth: 0
+
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: ${{ inputs.bun-version }}
+
+      # Trusted publishing needs npm 11.5.1 or later, which current LTS Node ships.
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7
+        with:
+          node-version: lts/*
+          registry-url: https://registry.npmjs.org
+
+      - run: bun install --frozen-lockfile
+
+      - id: version
+        uses: BrianEstrada/.github/git-cliff-version@4a23053ced2816db78af5015fd62b75aff614ecf # main
+        with:
+          version: ${{ inputs.version }}
+
+      - name: Bump package.json and update CHANGELOG.md
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          bun pm version "$VERSION" --no-git-tag-version
+          bun run changelog
+
+      - run: bun run check
+
+      # Atomic, so main and the tag move together or not at all.
+      - name: Commit and tag
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          bot="${APP_SLUG}[bot]"
+          git config user.name "$bot"
+          git config user.email "$(gh api "/users/$bot" --jq .id)+$bot@users.noreply.github.com"
+          git commit -am "chore(release): v$VERSION"
+          git tag "v$VERSION"
+          git push --atomic origin HEAD:main "v$VERSION"
+
+      - run: npm publish
+
+      # The notes are this version's CHANGELOG.md section, without its heading.
+      - name: Create the GitHub Release
+        env:
+          VERSION: ${{ steps.version.outputs.version }}
+          GH_TOKEN: ${{ steps.app-token.outputs.token }}
+        run: |
+          awk '/^## /{ n++; next } n == 1' CHANGELOG.md > "$RUNNER_TEMP/notes.md"
+          gh release create "v$VERSION" --title "v$VERSION" --notes-file "$RUNNER_TEMP/notes.md" --verify-tag
