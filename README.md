@@ -1,6 +1,9 @@
 # .github
 
-Shared GitHub workflows for my repos.
+Shared GitHub workflows and repo defaults for my repos.
+
+- [`repo-defaults/`](repo-defaults/README.md): how every repo is set up (settings, the `main` ruleset,
+  required files), with a script that checks or applies it.
 
 ## bun-npm-release
 
