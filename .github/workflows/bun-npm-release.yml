@@ -3,6 +3,7 @@
 # The caller needs a `changelog` script, `bun run check`, git-cliff, and a GitHub App that can bypass
 # main's ruleset, since the release commit is pushed straight to main.
 # npm trusted publishing matches the calling workflow's file name, not this one's.
+# With publish-only, it finishes a release whose tag already exists, e.g. after npm rejected the publish.
 name: Bun npm release
 
 on:
@@ -13,6 +14,11 @@ on:
         required: false
         type: string
         default: ""
+      publish-only:
+        description: Skip the bump, commit and tag, and publish the already tagged `version` to npm and GitHub Releases.
+        required: false
+        type: boolean
+        default: false
       bun-version:
         required: false
         type: string
@@ -66,7 +72,24 @@ jobs:
         id: version
         env:
           REQUESTED: ${{ inputs.version }}
+          PUBLISH_ONLY: ${{ inputs.publish-only }}
         run: |
+          if [ "$PUBLISH_ONLY" = true ]; then
+            version="${REQUESTED#v}"
+            if [ -z "$version" ] || ! git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
+              echo "publish-only needs the version of an existing tag, like 0.2.0" >&2
+              exit 1
+            fi
+            # The rest of the job runs on the tag, with the tag's dependencies.
+            git checkout -q "v$version"
+            bun install --frozen-lockfile
+            if [ "$(jq -r .version package.json)" != "$version" ]; then
+              echo "package.json at v$version isn't version $version" >&2
+              exit 1
+            fi
+            echo "version=$version" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
           latest="$(git describe --tags --abbrev=0 --match 'v[0-9]*' 2> /dev/null || true)"
           if [ -n "$REQUESTED" ]; then
             version="${REQUESTED#v}"
@@ -90,6 +113,7 @@ jobs:
           echo "version=$version" >> "$GITHUB_OUTPUT"
 
       - name: Bump package.json and update CHANGELOG.md
+        if: ${{ !inputs.publish-only }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
         run: |
@@ -100,6 +124,7 @@ jobs:
 
       # Atomic, so main and the tag move together or not at all.
       - name: Commit and tag
+        if: ${{ !inputs.publish-only }}
         env:
           VERSION: ${{ steps.version.outputs.version }}
           APP_SLUG: ${{ steps.app-token.outputs.app-slug }}
