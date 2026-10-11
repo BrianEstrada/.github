@@ -1,4 +1,4 @@
-name: Pick the release version
+name: git-cliff release version
 description: >-
   Works out the next version from the commits with git-cliff, or checks the one requested, and fails
   when there's nothing to release. Needs a full-history checkout (fetch-depth: 0) and git-cliff
