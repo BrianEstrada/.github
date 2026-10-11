@@ -28,6 +28,10 @@ takes the one requested), bumps `package.json`, runs `bun run changelog` and `bu
 GitHub Release from `CHANGELOG.md`. It stops when every commit since the last `v*` tag is one git-cliff
 skips (deps, chores).
 
+If npm rejects the publish after the tag is pushed, fix the cause and re-run with `publish-only` and that
+`version`: it checks out the tag, skips the bump, commit and tag, then publishes and creates the GitHub
+Release.
+
 The release commit goes straight to main, so it needs a GitHub App with Contents: read and write,
 installed on the repo and allowed to bypass main's ruleset. Store its Client ID as the
 `RELEASE_APP_CLIENT_ID` secret and its private key as the `RELEASE_APP_PRIVATE_KEY` secret.
@@ -43,6 +47,11 @@ on:
         description: Version to release, like 0.2.0. Leave empty to work it out from the commits.
         required: false
         type: string
+      publish-only:
+        description: Only publish the already tagged version above, e.g. after npm rejected the publish.
+        required: false
+        type: boolean
+        default: false
 
 permissions:
   contents: read
@@ -57,6 +66,7 @@ jobs:
     uses: BrianEstrada/.github/.github/workflows/bun-npm-release.yml@<sha> # main
     with:
       version: ${{ inputs.version }}
+      publish-only: ${{ inputs.publish-only }}
     secrets:
       app-client-id: ${{ secrets.RELEASE_APP_CLIENT_ID }}
       app-private-key: ${{ secrets.RELEASE_APP_PRIVATE_KEY }}
