@@ -5,6 +5,21 @@ Shared GitHub workflows and repo defaults for my repos.
 - [`repo-defaults/`](repo-defaults/README.md): how every repo is set up (settings, the `main` ruleset,
   required files), with a script that checks or applies it.
 
+## Renovate preset
+
+[`default.json`](default.json) is the Renovate config every repo extends from its `.github/renovate.json`:
+
+```json
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["github>BrianEstrada/.github"]
+}
+```
+
+It's `config:recommended` with `chore` commit types and GitHub Actions pinned to digests, and it waits 3
+days before proposing an npm release. PRs from branches in the repo, Renovate's included, run workflows
+with the repo's secrets, so a hijacked version should be pulled before it gets there.
+
 ## bun-npm-release
 
 Reusable release workflow for a Bun-built npm package. It picks the next version with git-cliff (or

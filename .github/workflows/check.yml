@@ -1,0 +1,40 @@
+# Lints the workflows, the scripts and the JSON here, so a broken shared workflow or default is caught
+# before another repo pins it.
+name: Check
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: check-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          persist-credentials: false
+
+      # actionlint also runs shellcheck on every `run:` block. The runner image ships shellcheck.
+      - name: actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+        run: |
+          curl -fsSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" | tar -xz actionlint
+          ./actionlint -color
+
+      - run: shellcheck repo-defaults/*.sh
+
+      - name: JSON
+        run: |
+          for file in default.json .github/renovate.json repo-defaults/*.json; do
+            jq empty "$file"
+          done

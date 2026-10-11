@@ -1,0 +1,16 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "description": "Renovate defaults for my repos. Extend with `github>BrianEstrada/.github`.",
+  "extends": [
+    "config:recommended",
+    ":semanticCommitTypeAll(chore)",
+    "helpers:pinGitHubActionDigests"
+  ],
+  "packageRules": [
+    {
+      "description": "Wait 3 days before proposing an npm release, so a hijacked version is likely pulled before it reaches a PR, where workflows run it with secrets.",
+      "matchDatasources": ["npm"],
+      "minimumReleaseAge": "3 days"
+    }
+  ]
+}

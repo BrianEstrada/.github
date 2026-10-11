@@ -30,7 +30,10 @@ The script reports these but doesn't change them, since they're files in the rep
 
 - `.github/CODEOWNERS` with `* @BrianEstrada`. The ruleset requires a code owner's approval.
 - `.github/workflows/check.yml` with a job named `check` that runs the repo's checks on every PR.
-- `.github/renovate.json` and `.github/pull_request_template.md`. Copy them from an existing repo.
+- `.github/renovate.json` extending the [shared preset](../README.md#renovate-preset), and
+  `.github/pull_request_template.md` copied from an existing repo.
+- `.github/workflows/review.yml` to review PRs with diffcop (copy this repo's), with an
+  `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` secret. It skips fork and Renovate PRs.
 - To release an npm package: a `.github/workflows/release.yml` that calls
   [`bun-npm-release`](../.github/workflows/bun-npm-release.yml) (see the [README](../README.md)), with
   BriansBot installed on the repo, its Client ID as the `RELEASE_APP_CLIENT_ID` variable, and its private

@@ -1,0 +1,35 @@
+# Reviews this repo's PRs with diffcop. Needs one repo secret: ANTHROPIC_API_KEY, or
+# CLAUDE_CODE_OAUTH_TOKEN (from `claude setup-token`).
+name: Review
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: review-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  review:
+    # Fork PRs don't get secrets, so there's nothing to authenticate with. Renovate's PRs run updated
+    # dependencies' code, which shouldn't see the Claude secrets.
+    if: ${{ !github.event.pull_request.draft && github.event.pull_request.head.repo.full_name == github.repository && github.event.pull_request.user.login != 'renovate[bot]' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      # Full history so diffcop can find the merge base with the PR's base branch.
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - uses: BrianEstrada/diffcop@27c84eabc5866ebf5c805ff6c1d443792fc0b3c2 # v0.1.0
+        with:
+          anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
+          claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}

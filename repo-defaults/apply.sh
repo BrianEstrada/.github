@@ -75,7 +75,7 @@ else
 fi
 
 # Files are only reported: they belong in a PR to the repo.
-for file in .github/CODEOWNERS .github/pull_request_template.md .github/renovate.json .github/workflows/check.yml; do
+for file in .github/CODEOWNERS .github/pull_request_template.md .github/renovate.json .github/workflows/check.yml .github/workflows/review.yml; do
   if gh api "repos/$repo/contents/$file" --silent 2> /dev/null; then
     echo "✓ $file"
   else
