@@ -20,7 +20,7 @@ shape='def shape($w): if ($w | type) == "object" then . as $v | reduce ($w | key
 # Rules and bypass actors come back in any order.
 normalize='if type == "object" and has("rules") then .rules |= sort_by(.type) | .bypass_actors |= sort_by(.actor_type, .actor_id) else . end'
 
-# Prints a diff and returns 1 when the current value isn't the default.
+# Prints a diff and succeeds when the current value isn't the default.
 differs() {
   local name="$1" have="$2" want="$3"
   if diff -u --label "$name (current)" --label "$name (default)" \
