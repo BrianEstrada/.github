@@ -53,7 +53,6 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7
         with:
           token: ${{ steps.app-token.outputs.token }}
-          ref: ${{ inputs.publish-only && format('v{0}', inputs.version) || '' }}
           # git-cliff reads every commit and tag since the last release.
           fetch-depth: 0
 
@@ -77,10 +76,13 @@ jobs:
         run: |
           if [ "$PUBLISH_ONLY" = true ]; then
             version="${REQUESTED#v}"
-            if [ -z "$version" ] || [ "$(git describe --tags --exact-match 2> /dev/null)" != "v$version" ]; then
+            if [ -z "$version" ] || ! git rev-parse -q --verify "refs/tags/v$version" > /dev/null; then
               echo "publish-only needs the version of an existing tag, like 0.2.0" >&2
               exit 1
             fi
+            # The rest of the job runs on the tag, with the tag's dependencies.
+            git checkout -q "v$version"
+            bun install --frozen-lockfile
             if [ "$(jq -r .version package.json)" != "$version" ]; then
               echo "package.json at v$version isn't version $version" >&2
               exit 1
