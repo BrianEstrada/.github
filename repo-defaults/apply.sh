@@ -86,18 +86,15 @@ done
 
 # The release workflow can't run without the App's Client ID and key, and neither can be set from here.
 if gh api "repos/$repo/contents/.github/workflows/release.yml" --silent 2> /dev/null; then
-  if gh variable list -R "$repo" --json name --jq '.[].name' | grep -qx RELEASE_APP_CLIENT_ID; then
-    echo "✓ RELEASE_APP_CLIENT_ID variable"
-  else
-    echo "✗ missing the RELEASE_APP_CLIENT_ID variable (BriansBot's Client ID)"
-    drift=1
-  fi
-  if gh secret list -R "$repo" --json name --jq '.[].name' | grep -qx RELEASE_APP_PRIVATE_KEY; then
-    echo "✓ RELEASE_APP_PRIVATE_KEY secret"
-  else
-    echo "✗ missing the RELEASE_APP_PRIVATE_KEY secret (BriansBot's private key)"
-    drift=1
-  fi
+  secrets="$(gh secret list -R "$repo" --json name --jq '.[].name')"
+  for secret in RELEASE_APP_CLIENT_ID RELEASE_APP_PRIVATE_KEY; do
+    if grep -qx "$secret" <<< "$secrets"; then
+      echo "✓ $secret secret"
+    else
+      echo "✗ missing the $secret secret (from BriansBot's settings)"
+      drift=1
+    fi
+  done
 fi
 
 if [ "$check" = true ]; then

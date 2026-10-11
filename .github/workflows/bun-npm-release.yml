@@ -13,15 +13,15 @@ on:
         required: false
         type: string
         default: ""
-      app-client-id:
-        description: Client ID of the GitHub App that pushes the release commit and tag.
-        required: true
-        type: string
       bun-version:
         required: false
         type: string
         default: 1.4.3
     secrets:
+      # A secret only so callers can pass it from theirs: `with:` can't read the secrets context.
+      app-client-id:
+        description: Client ID of the GitHub App that pushes the release commit and tag.
+        required: true
       app-private-key:
         description: Private key of that GitHub App.
         required: true
@@ -40,7 +40,7 @@ jobs:
       - id: app-token
         uses: actions/create-github-app-token@bcd2ba49218906704ab6c1aa796996da409d3eb1 # v3.2.0
         with:
-          client-id: ${{ inputs.app-client-id }}
+          client-id: ${{ secrets.app-client-id }}
           private-key: ${{ secrets.app-private-key }}
           permission-contents: write
 

@@ -36,7 +36,7 @@ The script reports these but doesn't change them, since they're files in the rep
   `ANTHROPIC_API_KEY` or `CLAUDE_CODE_OAUTH_TOKEN` secret. It skips fork and Renovate PRs.
 - To release an npm package: a `.github/workflows/release.yml` that calls
   [`bun-npm-release`](../.github/workflows/bun-npm-release.yml) (see the [README](../README.md)), with
-  BriansBot installed on the repo, its Client ID as the `RELEASE_APP_CLIENT_ID` variable, and its private
+  BriansBot installed on the repo, its Client ID as the `RELEASE_APP_CLIENT_ID` secret, and its private
   key as the `RELEASE_APP_PRIVATE_KEY` secret. On npmjs.com, a trusted publisher for the repo and
   `release.yml`.
 
