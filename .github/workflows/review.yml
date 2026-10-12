@@ -29,7 +29,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: BrianEstrada/diffcop@27c84eabc5866ebf5c805ff6c1d443792fc0b3c2 # v0.1.0
+      - uses: BrianEstrada/diffcop@1606f260ab19d9d59b44a7db8cc5d73c43a22c2a # v0.2.0
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
