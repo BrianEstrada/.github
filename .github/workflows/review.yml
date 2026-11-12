@@ -4,15 +4,18 @@ name: Review
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, ready_for_review]
+    # edited covers a retargeted base, and title or body edits, which diffcop re-checks without reviewing the code.
+    types: [opened, synchronize, reopened, ready_for_review, edited]
 
 concurrency:
+  # One group per PR: a run that cancels another picks up whatever that one hadn't finished.
   group: review-${{ github.event.pull_request.number }}
   cancel-in-progress: true
 
 permissions:
   contents: read
   pull-requests: write
+  statuses: write # the diffcop status on the head commit
 
 jobs:
   review:
@@ -29,7 +32,7 @@ jobs:
           fetch-depth: 0
           persist-credentials: false
 
-      - uses: BrianEstrada/diffcop@1606f260ab19d9d59b44a7db8cc5d73c43a22c2a # v0.2.0
+      - uses: BrianEstrada/diffcop@6de58b7e417358d621befe97ecab24b10680a52c # v0.3.0
         with:
           anthropic-api-key: ${{ secrets.ANTHROPIC_API_KEY }}
           claude-code-oauth-token: ${{ secrets.CLAUDE_CODE_OAUTH_TOKEN }}
